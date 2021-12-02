@@ -25,3 +25,4 @@ gradle.addBuildListener(new BuildAdapter() {
         println("<--->Project build finish")
     }
 })
+include ':annotation'

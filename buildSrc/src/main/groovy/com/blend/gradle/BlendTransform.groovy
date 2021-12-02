@@ -3,6 +3,9 @@ package com.blend.gradle
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.ClassWriter
 
 class BlendTransform extends Transform {
 
@@ -58,33 +61,67 @@ class BlendTransform extends Transform {
      * @param transformInvocation
      * @throws TransformException* @throws InterruptedException* @throws IOException
      */
-    @java.lang.Override
-    void transform(TransformInvocation transformInvocation) throws TransformException, java.lang.InterruptedException, java.io.IOException {
+    @Override
+    void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         super.transform(transformInvocation)
+
         printCopyRight()
-        TransformOutputProvider transformOutputProvider = transformInvocation.getOutputProvider()
+
         // 从TransformInvocation获取输入，然后按照class文件夹和jar集合进行遍历，拿到所有的class文件，进行处理
-        transformInvocation.getInputs().each { TransformInput transformInput ->
+        transformInvocation.inputs.each { TransformInput input ->
 
-            // 把 JAR 类型的输入，拷贝到目标目录
-            transformInput.jarInputs.each { JarInput jarInput ->
-
-                // 将修改过的字节码copy到dest，就可以实现编译期间干预字节码的目的了
-                processJarInput(jarInput, transformOutputProvider)
-            }
-
-            // 把 文件夹 类型的输入，拷贝到目标目录
-            transformInput.directoryInputs.each { DirectoryInput directoryInput ->
-
+            // 把文件夹类型的输入，拷贝到目标目录
+            input.directoryInputs.each { DirectoryInput directoryInput ->
                 if (directoryInput.file.isDirectory()) {
-                    FileUtils.getAllFiles(directoryInput.file).each { File file ->
-                        println(file.name)
+                    directoryInput.file.eachFileRecurse { File file ->
+                        transformFile(file)
                     }
+                } else {
+                    transformFile(file)
                 }
 
-                processDirectoryInputs(directoryInput, transformOutputProvider)
+                // Transform 拷贝文件到 transforms 目录
+                File dest = transformInvocation.outputProvider.getContentLocation(
+                        directoryInput.getName(),
+                        directoryInput.getContentTypes(),
+                        directoryInput.getScopes(),
+                        Format.DIRECTORY);
+                // 将修改过的字节码copy到dest，实现编译期间干预字节码
+                FileUtils.copyDirectory(directoryInput.getFile(), dest)
+            }
+
+            // 把JAR类型的输入，拷贝到目标目录
+            input.jarInputs.each { JarInput jarInput ->
+                def jarName = jarInput.name
+                def dest = transformInvocation.outputProvider.getContentLocation(jarName,
+                        jarInput.contentTypes, jarInput.scopes, Format.JAR)
+
+                // 将修改过的字节码copy到dest，就可以实现编译期间干预字节码的目的了
+                FileUtils.copyFile(jarInput.getFile(), dest)
             }
         }
+
+    }
+
+    // 处理响应的文件
+    private void transformFile(File file) throws IOException {
+        def name = file.name
+        if (filerClass(name)) {
+            ClassReader reader = new ClassReader(file.bytes)
+            ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS)
+            ClassVisitor visitor = new TimePluginClassVisitor(writer)
+            reader.accept(visitor, ClassReader.EXPAND_FRAMES)
+
+            byte[] code = writer.toByteArray()
+            def classPath = file.parentFile.absolutePath + File.separator + name
+            FileOutputStream fos = new FileOutputStream(classPath)
+            fos.write(code)
+            fos.close()
+        }
+    }
+
+    private static boolean filerClass(String name) {
+        return name.endsWith("Activity.class")
     }
 
     static void printCopyRight() {
@@ -97,29 +134,4 @@ class BlendTransform extends Transform {
         println()
     }
 
-    static void processJarInput(JarInput jarInput, TransformOutputProvider outputProvider) {
-        File dest = outputProvider.getContentLocation(
-                jarInput.getFile().getAbsolutePath(),
-                jarInput.getContentTypes(),
-                jarInput.getScopes(),
-                Format.JAR)
-
-        // to do some transform
-
-        // 将修改过的字节码copy到dest，就可以实现编译期间干预字节码的目的了
-        FileUtils.copyFile(jarInput.getFile(), dest)
-    }
-
-    static void processDirectoryInputs(DirectoryInput directoryInput, TransformOutputProvider outputProvider) {
-        File dest = outputProvider.getContentLocation(directoryInput.getName(),
-                directoryInput.getContentTypes(), directoryInput.getScopes(),
-                Format.DIRECTORY)
-        // 建立文件夹
-        FileUtils.mkdirs(dest)
-
-        // to do some transform
-
-        // 将修改过的字节码copy到dest，就可以实现编译期间干预字节码的目的了
-        FileUtils.copyDirectory(directoryInput.getFile(), dest)
-    }
 }
