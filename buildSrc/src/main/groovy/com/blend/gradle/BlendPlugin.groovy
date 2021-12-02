@@ -12,14 +12,11 @@ class BlendPlugin implements Plugin<Project> {
     void apply(Project project) {
 
         //注册Transform
-        println "<--->I am form BlendPlugin,apply form 1111"
         if (project.plugins.hasPlugin(AppPlugin)) {
-            println "<--->I am form BlendPlugin,apply form 2222"
             AppExtension appExtension = project.extensions.getByType(AppExtension)
             Transform transform = new BlendTransform()
             appExtension.registerTransform(transform)
         }
-
 
         println "<--->I am form BlendPlugin,apply form ${project.name}"
 

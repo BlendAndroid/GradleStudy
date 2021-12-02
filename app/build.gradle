@@ -24,18 +24,71 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
+    //配置签名设置
+    signingConfigs {
         release {
+            keyAlias 'imooc'    //签名证书中秘钥的别名
+            keyPassword '123456'     //签名证书中秘钥的密码
+            storeFile file('./test.key')    //签名证书文件
+            storePassword '123456'  //签名证书的密码
+        }
+    }
+
+    //构建不同类型的APK
+    buildTypes {
+
+        debug {
+            buildConfigField("String", "BUILD_TIME",
+                    "\"${System.currentTimeMillis()}\"")
+
+            resValue("string", "greeting", "hello!")
+
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+        }
+
+        release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+
+    flavorDimensions "channel"
+
+    productFlavors {
+        baidu {
+            manifestPlaceholders = [MTA_CHANNEL_VALUE: "baidu"]
+        }
+        wandoujia {
+            manifestPlaceholders = [MTA_CHANNEL_VALUE: "wandoujia"]
+        }
+        xiaomi {
+            manifestPlaceholders = [MTA_CHANNEL_VALUE: "xiaomi"]
+        }
+    }
+
+    //APK重命名
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            if (variant.buildType.name.equals('debug')) {
+                def fileName =
+                        "Demo_${variant.productFlavors[0].name}" +
+                                "_${defaultConfig.versionName}.apk"
+                output.outputFileName = fileName
+            }
+        }
+
     }
 }
 
