@@ -1,0 +1,27 @@
+rootProject.name = "GradleStudy"
+include ':app'
+include ':module'
+include ':blend-gradle-plugin'
+
+println "<--->My Project path:${rootProject.projectDir}"
+
+gradle.addBuildListener(new BuildAdapter() {
+
+    @java.lang.Override
+    void settingsEvaluated(Settings settings) {
+        println("<--->Project init finish")
+    }
+
+    @java.lang.Override
+    void projectsEvaluated(Gradle gradle) {
+        println("<--->Project config finish")
+        gradle.rootProject.childProjects.each { name, p ->
+            println "<--->[sub project]'name is:${name},path is:${p.getProjectDir()}"
+        }
+    }
+
+    @java.lang.Override
+    void buildFinished(BuildResult buildResult) {
+        println("<--->Project build finish")
+    }
+})
