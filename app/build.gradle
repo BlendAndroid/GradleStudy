@@ -21,6 +21,9 @@ android {
         versionCode 1
         versionName "1.0"
 
+        rootProject.ext.debugBuild = true
+
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -106,4 +109,28 @@ dependencies { DependencyHandler dependencyHandler ->
 
     implementation project(path: ':annotation')
 
+}
+
+
+//----------------------在generate.*BuildConfig之前插入propagateBuildConfig任务------------------------------------
+//只能在module下面使用，比如APP下面
+task propagateBuildConfig {
+    project.android.buildTypes.all { type ->
+        println "<---> type: " + type.name
+        println "<---> rootProject: " + rootProject.name
+        println "<---> rootProject.ext.has " + rootProject.ext.has("debugBuild")
+        println "<---> rootProject.ext.blendxx " + rootProject.ext.has("blendxx")
+
+        // debuggable 是否可以进行本地调试
+        type.debuggable = rootProject.ext.has("debugBuild") ? rootProject.ext.debugBuild : false
+        println "<---> type.debuggable: " + type.debuggable
+    }
+}
+
+project.afterEvaluate {
+    tasks.all { task ->
+        if (task.name =~ /generate.*BuildConfig/) {
+            task.dependsOn(propagateBuildConfig)
+        }
+    }
 }
