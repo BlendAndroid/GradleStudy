@@ -23,7 +23,7 @@ buildscript { ScriptHandler scriptHandler ->
         repositoryHandler.google()
         repositoryHandler.mavenCentral()
         repositoryHandler.maven {
-            url uri("C:\\Project\\GradleStudy\\repo")
+            url uri("\\repo")
         }
     }
     //配置工程的第三方插件依赖地址
@@ -43,9 +43,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        jcenter() // Warning: this repository is going to shut down soon
         maven {
-            url uri("C:\\Project\\GradleStudy\\repo")
+            url uri("\\repo")
         }
     }
 }
