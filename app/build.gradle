@@ -1,12 +1,21 @@
-//应用插件
+// 使用二进制插件
 plugins {
-    id 'com.android.application'
+    id 'com.android.application'    // android插件
     id 'kotlin-android'
-    id 'com.blend.gradle'   //自定义插件
+    id 'com.blend.gradle'   // 自定义插件
 }
 
-blend {
-    rootPath getRootDir().absolutePath
+// 实现参数配置,用于给插件传递参数,这其实是一个闭包
+blendParam {
+    rootPath "I'm Plugin Param"
+}
+
+static def getGitVersion() {
+    try {
+        return 'git rev-parse --short HEAD'.execute().text.trim()
+    } catch (Throwable ignored) {
+        return ""
+    }
 }
 
 //配置Android插件所需参数
@@ -23,6 +32,7 @@ android {
 
         rootProject.ext.debugBuild = true
 
+        buildConfigField "String", "GIT_REVISION", "\"${getGitVersion()}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,7 +54,18 @@ android {
             buildConfigField("String", "BUILD_TIME",
                     "\"${System.currentTimeMillis()}\"")
 
-            resValue("string", "greeting", "hello!")
+            resValue("string", "greeting", "hello debug!")
+
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+        }
+
+        qa {
+            buildConfigField("String", "BUILD_TIME",
+                    "\"${System.currentTimeMillis()}\"")
+
+            resValue("string", "greeting", "hello qa!")
 
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
@@ -67,26 +88,52 @@ android {
         jvmTarget = '1.8'
     }
 
-    flavorDimensions "channel"
+    // 用来定义产品风味维度的属性
+    // 产品风味（flavor）是指在同一个代码基础上，根据特定的需求创建多个变体的能力。
+    // 这些变体可以有不同的包名、应用图标、应用名称、默认设置和其他属性，以便在同一个应用程序中为不同的用
+    // 户或市场提供不同的版本。
+    flavorDimensions "channel", "abi"  // 定义两个渠道维度
 
+    // 产品风味,flavorDimensions需要结合这个使用
     productFlavors {
-        baidu {
-            manifestPlaceholders = [MTA_CHANNEL_VALUE: "baidu"]
+        huawei {
+            dimension "channel"
+            // 类型：Map<String, Object>
+            // 描述：配置可以在 AndroidManifest.xml 中替换的参数，我们可以使用这个参数配置不同风味的 logo 和
+            // app名字，以及友盟的参数，达到不同风味的差异化配置。
+            manifestPlaceholders = [MTA_CHANNEL_VALUE: "huawei"]
         }
-        wandoujia {
-            manifestPlaceholders = [MTA_CHANNEL_VALUE: "wandoujia"]
+        oppo {
+            dimension "channel"
+            manifestPlaceholders = [MTA_CHANNEL_VALUE: "oppo"]
         }
         xiaomi {
+            dimension "channel"
             manifestPlaceholders = [MTA_CHANNEL_VALUE: "xiaomi"]
+        }
+        x86 {
+            dimension "abi"
+            // 用来指定应用程序支持的 CPU 架构，这里我们指定了 x86 架构。
+            ndk {
+                abiFilters "x86", "x86_64"
+            }
+        }
+        arm {
+            dimension "abi"
+            ndk {
+                abiFilters "armeabi-v7a", "arm64-v8a"
+            }
         }
     }
 
     //APK重命名
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
-            if (variant.buildType.name.equals('debug')) {
+            if (variant.buildType.name == 'debug') {
+                // variant.productFlavors[0].name 获取第一个产品风味的名字
+                // variant.productFlavors[1].name 获取第二个产品风味的名字
                 def fileName =
-                        "Demo_${variant.productFlavors[0].name}" +
+                        "Demo_${variant.productFlavors[0].name}_${variant.productFlavors[1].name}" +
                                 "_${defaultConfig.versionName}.apk"
                 output.outputFileName = fileName
             }
@@ -113,13 +160,31 @@ dependencies { DependencyHandler dependencyHandler ->
 
 
 //----------------------在generate.*BuildConfig之前插入propagateBuildConfig任务------------------------------------
+
+// 获取子工程的路径,通过project
+println("<---> app module project ${project.projectDir} ")
+
+task testTask() {
+    doLast {
+        println "<---> testTask"
+    }
+}
+
+// 这样执行命令: ./gradlew :app:testTask2 -q
+task testTask2() {
+    dependsOn testTask
+    doLast {
+        println "<---> testTask2"
+    }
+}
+
 //只能在module下面使用，比如APP下面
 task propagateBuildConfig {
     project.android.buildTypes.all { type ->
         println "<---> type: " + type.name
         println "<---> rootProject: " + rootProject.name
         println "<---> rootProject.ext.has " + rootProject.ext.has("debugBuild")
-        println "<---> rootProject.ext.blendxx " + rootProject.ext.has("blendxx")
+        println "<---> rootProject.ext.blendParam " + rootProject.ext.has("blendParam")
 
         // debuggable 是否可以进行本地调试
         type.debuggable = rootProject.ext.has("debugBuild") ? rootProject.ext.debugBuild : false

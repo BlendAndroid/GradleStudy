@@ -4,6 +4,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.MethodVisitor
 
+// MethodVisitor是ASM（Java字节码操作库）中的一个重要类，用于访问和修改Java类的方法信息。
 class TimeMethodVisitor extends MethodVisitor {
 
     private String className
@@ -12,7 +13,7 @@ class TimeMethodVisitor extends MethodVisitor {
 
     private boolean isInject    // 是否为注解方法
 
-    public TimeMethodVisitor(MethodVisitor methodVisitor, String className, String methodName) {
+    TimeMethodVisitor(MethodVisitor methodVisitor, String className, String methodName) {
         super(Opcodes.ASM5, methodVisitor)
         this.className = className
         this.methodName = methodName
@@ -26,6 +27,7 @@ class TimeMethodVisitor extends MethodVisitor {
         return super.visitAnnotation(desc, visible)
     }
 
+    // 访问方法的代码开始部分。
     @Override
     void visitCode() {
 

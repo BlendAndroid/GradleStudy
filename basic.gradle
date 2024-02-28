@@ -1,0 +1,84 @@
+// 闭包
+def c = { println("Hello Closure")}
+c()
+
+// 有一个的参数的时候，参数可以忽略，默认名称为 it
+def c2 = { println("c2: it = $it") }
+c2("imooc")
+
+// 只有一个参数的时候，名称可以任意指定，但是it就不可用了
+def c3 = { name -> println("c3: name = $name") }
+c3("imooc")
+
+// 定义多个参数，需要用逗号分隔
+def c4 = { name1, name2 ->
+    println("c4: name1 = $name1")
+    println("c4: name2 = $name2")
+}
+c4("imooc_1", "imooc_2")
+
+def list = [1, 3, 5, 7, 9]
+list.each { println("item = $it") }
+
+//------------------实现自定义的DSL,并将里面的参数给读取出来----------------------------
+
+// 定义一个闭包
+def myAndroid = {
+    compileSdkVersion 27
+
+    // 定义一个闭包,其实是嵌套对象的写法
+    defaultConfig {
+        versionName "1.0"
+    }
+}
+
+Android a = new Android()
+// 将闭包与具体对象关联起来,将闭包的属性赋值给对象
+myAndroid.delegate = a
+myAndroid.call()
+
+println("myAndroid = $a")
+
+// 默认是public的,其实和java一样
+class DefaultConfig {
+
+    private String versionName
+
+    // 能定义成def, 也能定义成void
+    def versionName(String versionName) {
+        this.versionName = versionName
+    }
+
+    @Override
+    String toString() {
+        return " DefaultConfig{ versionName = $versionName }"
+    }
+
+}
+
+class Android {
+    private int compileSdkVersion
+    private DefaultConfig defaultConfig
+
+    Android() {
+        this.defaultConfig = new DefaultConfig()
+    }
+
+    def compileSdkVersion(int compileSdkVersion) {
+        this.compileSdkVersion = compileSdkVersion
+    }
+
+    // 接受的参数是一个闭包
+    def defaultConfig(Closure closure) {
+        // 将闭包与具体对象关联起来,对象就获取到了闭包的所有属性
+        closure.setDelegate(defaultConfig)
+        closure.call()
+    }
+
+    @Override
+    String toString() {
+        return "Android { compileSdkVersion = $compileSdkVersion, " +
+                "defaultConfig = $defaultConfig}"
+    }
+
+}

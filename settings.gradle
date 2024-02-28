@@ -3,15 +3,21 @@ include ':app'
 include ':module'
 include ':blend-gradle-plugin'
 
+// 不管怎么操作，初始化和配置阶段都要全部执行，然后才是执行相应的任务
+
+// 在初始完成之前执行
 println "<--->My Project path:${rootProject.projectDir}"
 
+// 添加构建的生命周期监听
 gradle.addBuildListener(new BuildAdapter() {
 
+    // 初始化阶段,执行settings.gradle
     @java.lang.Override
     void settingsEvaluated(Settings settings) {
         println("<--->Project init finish")
     }
 
+    // 配置阶段,执行各个目录的build.gradle
     @java.lang.Override
     void projectsEvaluated(Gradle gradle) {
         println("<--->Project config finish")
@@ -20,6 +26,7 @@ gradle.addBuildListener(new BuildAdapter() {
         }
     }
 
+    // 执行阶段,执行配置阶段定义的task依次执行
     @java.lang.Override
     void buildFinished(BuildResult buildResult) {
         println("<--->Project build finish")

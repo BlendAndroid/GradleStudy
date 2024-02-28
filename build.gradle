@@ -14,7 +14,7 @@
 //    }
 //}
 
-//通过这里的定义，子Project也能访问到
+//这里也是闭包，通过这里的定义，子Project也能访问到,定义子工程共有的配置
 buildscript { ScriptHandler scriptHandler ->
     //这个就是通过Extensions来定义的
     ext.kotlin_version = "1.5.10"
@@ -28,7 +28,7 @@ buildscript { ScriptHandler scriptHandler ->
     }
     //配置工程的第三方插件依赖地址
     scriptHandler.dependencies { DependencyHandler dependencyHandler ->
-        //TODO 为什么这样写
+        // 配置二进制插件
         classpath "com.android.tools.build:gradle:4.2.2"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
@@ -102,46 +102,54 @@ apply from: 'config.gradle'
 //第三种
 println "<--->${propertiesFile}"
 
+// 使用脚本插件
+apply from: 'basic.gradle'
+
 //----------------------Task------------------------------------
+
 //doFirst：为已有的task之前添加逻辑
 //doLast：为已有的task之后添加逻辑
 //直接通过task创建
-//task helloTask(group: "blend", description: "hello task exec") {    //在配置阶段执行
-//    println '<--->hello task'
-//    doFirst {
-//        println '<--->hello task do First 222'
-//    }
-//}
-//
-//helloTask.doFirst { //先执行外部的doFirst
-//    println '<--->hello task do First 111'
-//}
-////通过TaskContainer去创建Task，TaskContainer是一个task的管理类，对task进行查找和添加
-//this.tasks.create(name: "helloTask2") {
-//    setGroup("Blend")   //设置组别，每个组的会放在一起
-//    setDescription("hello task2 exec")  //设置描述
-//    println '<--->hello task2'
-//}
-//
-////total time是初始化，配置，执行的总的耗时
-////计算build时长的，最后执行gradlew build命令
-//def startBuildTime, endBuildTime
-//
-////配置阶段执行完以后回调，保证要找的task已经执行完毕
-//project('app').afterEvaluate { Project project ->
-//    def preBuildTask = project.tasks.getByName('preBuild')  //执行的第一个任务
-//    preBuildTask.doFirst {  //preBuild的task之前执行
-//        startBuildTime = System.currentTimeMillis()
-//        println '<--->the start time is:' + startBuildTime
-//    }
-//
-//    def buildTask = project.tasks.getByName('build')    //最后一个执行的任务
-//    buildTask.doLast {  //build的task之后执行
-//        endBuildTime = System.currentTimeMillis()
-//        println '<--->the end time is:' + endBuildTime
-//        println "<--->the build time is:${endBuildTime - startBuildTime}"
-//    }
-//}
+task helloTask(group: "blend", description: "hello task exec") {    //在配置阶段执行
+    println '<--->hello task'
+    doFirst {
+        println '<--->hello task do First 222'
+    }
+}
+
+helloTask.doFirst { //先执行外部的doFirst
+    println '<--->hello task do First 111'
+}
+//通过TaskContainer去创建Task，TaskContainer是一个task的管理类，对task进行查找和添加
+this.tasks.create(name: "helloTask2") {
+    setGroup("Blend")   //设置组别，每个组的会放在一起
+    setDescription("hello task2 exec")  //设置描述
+    println '<--->hello task2'
+}
+
+//total time是初始化，配置，执行的总的耗时
+//计算build时长的，最后执行gradlew build命令
+def startBuildTime, endBuildTime
+
+//配置阶段执行完以后回调，保证要找的task已经执行完毕
+project('app').afterEvaluate { Project project ->
+    def preBuildTask = project.tasks.getByName('preBuild')  //执行的第一个任务
+    preBuildTask.doFirst {  //preBuild的task之前执行
+        startBuildTime = System.currentTimeMillis()
+        println '<--->the start time is:' + startBuildTime
+    }
+
+    // 遍历所有的task,找到以assemble开头的task
+    project.tasks.all { taskAssemble ->
+        if (taskAssemble.name.startsWith('assemble')) {
+            taskAssemble.doLast {  //build的task之后执行
+                endBuildTime = System.currentTimeMillis()
+                println '<--->the end time is:' + endBuildTime
+                println "<--->the build time is:${endBuildTime - startBuildTime}"
+            }
+        }
+    }
+}
 
 //----------------------Task执行顺序------------------------------------
 task taskX {

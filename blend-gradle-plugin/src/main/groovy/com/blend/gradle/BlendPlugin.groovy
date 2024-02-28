@@ -10,11 +10,11 @@ class BlendPlugin implements Plugin<Project> {
 
         println "<--->I am form BlendPlugin,apply form ${project.name}"
 
-        project.getExtensions().create("blend", BlendExtension)
+        project.getExtensions().create("blendParam", BlendExtension)
 
         project.afterEvaluate {
-            BlendExtension extension = project["blend"]
-            println "<--->User's root path is:${extension.rootPath}"
+            BlendExtension extension = project["blendParam"]
+            println "<--->plugin User's root path is:${extension.rootPath}"
         }
     }
 }

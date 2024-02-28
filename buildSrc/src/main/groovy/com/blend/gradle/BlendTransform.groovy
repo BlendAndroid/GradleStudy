@@ -128,7 +128,7 @@ class BlendTransform extends Transform {
         println()
         println("******************************************************************************")
         println("******                                                                  ******")
-        println("******                欢迎使用 BlendTransform 编译插件                    ******")
+        println("******            Welcome BlendTransform Compile Plugin                 ******")
         println("******                                                                  ******")
         println("******************************************************************************")
         println()

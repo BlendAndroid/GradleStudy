@@ -17,13 +17,12 @@ class MainActivity : AppCompatActivity() {
     @InjectTimestamp
     private fun getChannel() {
         //读取渠道信息
-        val appInfo = packageManager
-            .getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+        val appInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
         val channelName = appInfo.metaData.getString("MTA_CHANNEL")
         Log.d(TAG, "Blend Channel = $channelName")
 
-//        BuildConfig
-//        getString(R.string.greeting)
+        val code = BuildConfig.VERSION_CODE
+        Log.e(TAG, "getResValue: ${getString(R.string.greeting)}")
     }
 
     companion object {

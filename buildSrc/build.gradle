@@ -23,10 +23,12 @@ sourceSets {
     }
 }
 
+// 发布插件的时候,不能使用buildSrc,得复制一份,这里并改名字为blend-gradle-plugin
+
 // 调用maven插件，用于发布
 apply plugin: 'maven'
 
-//配置maven插件中的uploadArchives任务
+//配置maven插件中的uploadArchives task
 uploadArchives {
     repositories {
         mavenDeployer {
